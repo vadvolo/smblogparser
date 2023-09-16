@@ -36,10 +36,13 @@ func (item *SmbLogItem) Print() {
 }
 
 type Logger struct {
+	Device	string
 }
 
-func NewLogger() *Logger {
-	return &Logger{}
+func NewLogger(device string) *Logger {
+	return &Logger{
+		Device: device,
+	}
 }
 
 func (l *Logger) ReadBytes() {
@@ -52,6 +55,8 @@ func (l *Logger) ReadBytes() {
 		if err == io.EOF {
 			break
 		}
+
+		fmt.Println(string(c))
 
 		buff = append(buff, c)
 		if len(buff) == 2 {
@@ -68,13 +73,13 @@ func (l *Logger) Write(w *io.Writer) {
 
 func (l *Logger) ParseData(input [][]byte) *SmbLogItem {
 	if strings.Contains(string(input[0]), "open_file") {
-		logItem := firstLineParse(input[0])
+		logItem := l.firstLineParse(input[0])
 		parseSecondLine(input[1], logItem)
 		logItem.Action = "open_file"
 		return logItem
 	}
 	if strings.Contains(string(input[0]), "close_normal_file") {
-		logItem := firstLineParse(input[0])
+		logItem := l.firstLineParse(input[0])
 		parseSecondLine(input[1], logItem)
 		logItem.Action = "close_file"
 		return logItem
@@ -82,22 +87,23 @@ func (l *Logger) ParseData(input [][]byte) *SmbLogItem {
 	return nil
 }
 
-func firstLineParse(input []byte) *SmbLogItem {
-	hostname := new(strings.Builder)
+func (l *Logger) firstLineParse(input []byte) *SmbLogItem {
+	fmt.Println("Parging first line", string(input))
+	// hostname := new(strings.Builder)
 	timestamp := new(strings.Builder)
-	offset := 19
+	offset := 1
 	for i := offset; i < len(input); i++ {
-		if hostname.Cap() == 0 {
-			for input[i+1] != 91 {
-				hostname.WriteByte(input[i])
-				i++
-				if i == len(input) {
-					break
-				}
-			}
-		}
+		// if hostname.Cap() == 0 {
+		// 	for input[i+1] != 91 {
+		// 		hostname.WriteByte(input[i])
+		// 		i++
+		// 		if i == len(input) {
+		// 			break
+		// 		}
+		// 	}
+		// }
 
-		i += 2
+		// i += 2
 
 		if timestamp.Cap() == 0 {
 			for input[i] != 46 {
@@ -120,14 +126,14 @@ func firstLineParse(input []byte) *SmbLogItem {
 	}
 
 	logItem := NewSmbLogItem()
-	logItem.Device = hostname.String()
+	logItem.Device = l.Device
 	logItem.Timestamp = t
 	return logItem
 }
 
 func parseSecondLine(input []byte, logItem *SmbLogItem) {
 	fmt.Println("Parging second line", string(input))
-	offset := 19 + len(logItem.Device) + 2
+	offset := 0
 	login := new(strings.Builder)
 	filePath := new(strings.Builder)
 	for i := offset; i < len(input); i++ {
@@ -141,6 +147,8 @@ func parseSecondLine(input []byte, logItem *SmbLogItem) {
 				break
 			}
 		}
+
+		fmt.Println(login)
 
 		for string(input[i-5:i]) != "file " {
 			i++
