@@ -47,8 +47,9 @@ func NewLogger(device string) *Logger {
 }
 
 func (l *Logger) ExportCVS() {
+	fmt.Println(l.Items)
 	for _, item := range l.Items {
-		fmt.Printf("%s,%s,%s,%s,%s", item.Login, item.Device, item.Timestamp, item.File, item.Action)
+		fmt.Printf("%s,%s,%s,%s,%s\n", item.Login, item.Device, item.Timestamp, item.File, item.Action)
 	}
 }
 
@@ -62,13 +63,15 @@ func (l *Logger) ReadBytes() {
 			break
 		}
 
-		fmt.Println(string(c))
+		// fmt.Println(string(c))
 
 		buff = append(buff, c)
 		if len(buff) == 2 {
 			logItem := l.ParseData(buff)
 			logItem.Print()
-			l.Items = append(l.Items, logItem)
+			if logItem != nil {
+				l.Items = append(l.Items, logItem)
+			}
 			buff = [][]byte{}
 		}
 	}
