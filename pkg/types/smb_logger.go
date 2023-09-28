@@ -36,7 +36,8 @@ func (item *SmbLogItem) Print() {
 }
 
 type Logger struct {
-	Device	string
+	Device string
+	Items  []*SmbLogItem
 }
 
 func NewLogger(device string) *Logger {
@@ -45,11 +46,16 @@ func NewLogger(device string) *Logger {
 	}
 }
 
+func (l *Logger) ExportCVS() {
+	for _, item := range l.Items {
+		fmt.Printf("%s,%s,%s,%s,%s", item.Login, item.Device, item.Timestamp, item.File, item.Action)
+	}
+}
+
 func (l *Logger) ReadBytes() {
 	input := bufio.NewReader(os.Stdin)
 	buff := [][]byte{}
 	for {
-
 
 		c, err := input.ReadBytes(10)
 		if err == io.EOF {
@@ -62,6 +68,7 @@ func (l *Logger) ReadBytes() {
 		if len(buff) == 2 {
 			logItem := l.ParseData(buff)
 			logItem.Print()
+			l.Items = append(l.Items, logItem)
 			buff = [][]byte{}
 		}
 	}
@@ -108,8 +115,10 @@ func (l *Logger) firstLineParse(input []byte) *SmbLogItem {
 		if timestamp.Cap() == 0 {
 			for input[i] != 46 {
 				switch input[i] {
-				case 47: timestamp.WriteByte(45)
-				default: timestamp.WriteByte(input[i])
+				case 47:
+					timestamp.WriteByte(45)
+				default:
+					timestamp.WriteByte(input[i])
 				}
 				i++
 				if i == len(input) {
@@ -156,14 +165,14 @@ func parseSecondLine(input []byte, logItem *SmbLogItem) {
 				break
 			}
 		}
-		for string(input[i:i+5]) != " read" && string(input[i:i+5]) != " (num"  {
+		for string(input[i:i+5]) != " read" && string(input[i:i+5]) != " (num" {
 			filePath.WriteByte(input[i])
 			i++
 			if i == len(input) {
 				break
 			}
 		}
-	
+
 		break
 	}
 	logItem.Login = login.String()

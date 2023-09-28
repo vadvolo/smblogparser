@@ -13,4 +13,5 @@ func main(){
 	logger := types.NewLogger(devArg)
 
 	logger.ReadBytes()
+	logger.ExportCVS()
 }
